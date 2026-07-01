@@ -1,59 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 
-const API_URL = "https://ultimate-mods-api.kawunlere.workers.dev";
+import HomeScreen from './src/screens/HomeScreen';
+import ModDetailScreen from './src/screens/ModDetailScreen';
+import VipScreen from './src/screens/VipScreen';
+import AdminScreen from './src/screens/AdminScreen';
 
-export default function App() {
-  const [key, setKey] = useState("Tap to unlock");
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-  const fetchKey = async () => {
-    try {
-      const res = await fetch(`${API_URL}/get-key/FreeFire`);
-      const data = await res.text();
-      setKey(data);
-      Alert.alert("Your Key", data);
-    } catch (e) {
-      Alert.alert("Error", "Cannot reach server");
-    }
-  };
-
+function HomeStack() {
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      
-      <View style={styles.header}>
-        <Text style={styles.logoText}>ULTIMATE <Text style={styles.goldText}>MODS</Text></Text>
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.welcome}>Welcome to the Divine Hub</Text>
-        <Text style={styles.subtitle}>Premium Games & Secure Tools</Text>
-        
-        <TouchableOpacity style={styles.card} onPress={fetchKey}>
-          <Text style={styles.cardTitle}>FREE FIRE MOD</Text>
-          <Text style={styles.cardPrice}>{key}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.promoText}>Powered by Cloudflare KV</Text>
-      </View>
-    </SafeAreaView>
+    <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#FFF' }, headerTintColor: '#DAA520' }}>
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ModDetail" component={ModDetailScreen} options={{ title: 'Mod Details' }} />
+    </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { height: 80, justifyContent: 'center', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  logoText: { fontSize: 24, fontWeight: '900', color: '#87CEEB', letterSpacing: 1 },
-  goldText: { color: '#FFD700' },
-  body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  welcome: { fontSize: 20, fontWeight: '600', color: '#333' },
-  subtitle: { fontSize: 14, color: '#AAA', marginTop: 5 },
-  card: { width: '100%', backgroundColor: '#FFFFFF', padding: 25, borderRadius: 20, marginTop: 30, alignItems: 'center',
-    borderWidth: 2, borderColor: '#FFD700' },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#DAA520' },
-  cardPrice: { fontSize: 12, color: '#87CEEB', marginTop: 5 },
-  footer: { padding: 20, alignItems: 'center' },
-  promoText: { fontSize: 10, color: '#DDD', letterSpacing: 2 }
-});
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: '#DAA520',
+          tabBarInactiveTintColor: '#AAA',
+          tabBarStyle: { backgroundColor: '#FFF', borderTopColor: '#F0F0F0', height: 60, paddingBottom: 8, paddingTop: 5 },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          headerShown: false
+        }}
+      >
+        <Tab.Screen 
+          name="HomeTab" 
+          component={HomeStack} 
+          options={{ 
+            title: 'Home',
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text>
+          }} 
+        />
+        <Tab.Screen 
+          name="VIP" 
+          component={VipScreen}
+          options={{ 
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👑</Text>
+          }}
+        />
+        <Tab.Screen 
+          name="Admin" 
+          component={AdminScreen}
+          options={{ 
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔒</Text>
+          }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
