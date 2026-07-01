@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, Linking, ActivityIndicator, Share, Dimensions, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getKey } from '../services/api';
 
 const { width } = Dimensions.get('window');
@@ -9,6 +10,28 @@ export default function AppDetailScreen({ route, navigation }) {
   const { app } = route.params;
   const [key, setKey] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const w = await AsyncStorage.getItem('wishlist');
+      const list = w ? JSON.parse(w) : [];
+      setIsFav(list.some(x => x.name === app.name));
+    })();
+  }, []);
+
+  const toggleFav = async () => {
+    const w = await AsyncStorage.getItem('wishlist');
+    let list = w ? JSON.parse(w) : [];
+    if (isFav) {
+      list = list.filter(x => x.name !== app.name);
+      setIsFav(false);
+    } else {
+      list.push(app);
+      setIsFav(true);
+    }
+    await AsyncStorage.setItem('wishlist', JSON.stringify(list));
+  };
 
   const unlock = async () => {
     setLoading(true);
@@ -39,22 +62,22 @@ export default function AppDetailScreen({ route, navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="chevron-back" size={26} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{app.name}</Text>
+        <TouchableOpacity onPress={toggleFav} style={{ marginRight: 10 }}>
+          <Icon name={isFav ? "heart" : "heart-outline"} size={24} color={isFav ? "#E91E63" : "#FFF"} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={shareApp}>
           <Icon name="share-social" size={22} color="#FFF" />
         </TouchableOpacity>
       </View>
 
       <ScrollView>
-        {/* Cover Background */}
         {app.cover && <Image source={{ uri: app.cover }} style={styles.cover} />}
 
-        {/* App Info */}
         <View style={styles.info}>
           <Image source={{ uri: app.icon || 'https://placehold.co/120/1a1a1a/FFD700?text=?' }} style={styles.icon} />
           <View style={styles.infoRight}>
@@ -71,7 +94,6 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Quick Stats */}
         <View style={styles.stats}>
           <View style={styles.stat}>
             <Text style={styles.statValue}>{app.size || '—'}</Text>
@@ -91,7 +113,6 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Screenshots */}
         {screenshots.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Screenshots</Text>
@@ -103,7 +124,6 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Mod Info */}
         {app.modInfo && (
           <View style={styles.modBox}>
             <View style={styles.modHead}>
@@ -114,7 +134,6 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Description */}
         {app.description && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
@@ -122,13 +141,11 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Safe Badge */}
         <View style={styles.safeBadge}>
           <Icon name="shield-checkmark" size={18} color="#4CAF50" />
           <Text style={styles.safeText}>Scanned & Verified Safe</Text>
         </View>
 
-        {/* Key Display */}
         {key && (
           <View style={styles.keyBox}>
             <Text style={styles.keyLabel}>YOUR LICENSE KEY</Text>
@@ -136,7 +153,6 @@ export default function AppDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Action Buttons */}
         <View style={styles.actions}>
           {!key && (
             <TouchableOpacity style={styles.unlockBtn} onPress={unlock} disabled={loading}>
