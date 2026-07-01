@@ -1,7 +1,22 @@
-import React from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+
+const API_URL = "https://ultimate-mods-api.kawunlere.workers.dev";
 
 export default function App() {
+  const [key, setKey] = useState("Tap to unlock");
+
+  const fetchKey = async () => {
+    try {
+      const res = await fetch(`${API_URL}/get-key/FreeFire`);
+      const data = await res.text();
+      setKey(data);
+      Alert.alert("Your Key", data);
+    } catch (e) {
+      Alert.alert("Error", "Cannot reach server");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -14,9 +29,9 @@ export default function App() {
         <Text style={styles.welcome}>Welcome to the Divine Hub</Text>
         <Text style={styles.subtitle}>Premium Games & Secure Tools</Text>
         
-        <TouchableOpacity style={styles.card}>
-          <Text style={styles.cardTitle}>VIP SUBSCRIPTION</Text>
-          <Text style={styles.cardPrice}>Unlock All Pro Features</Text>
+        <TouchableOpacity style={styles.card} onPress={fetchKey}>
+          <Text style={styles.cardTitle}>FREE FIRE MOD</Text>
+          <Text style={styles.cardPrice}>{key}</Text>
         </TouchableOpacity>
       </View>
 
@@ -36,7 +51,7 @@ const styles = StyleSheet.create({
   welcome: { fontSize: 20, fontWeight: '600', color: '#333' },
   subtitle: { fontSize: 14, color: '#AAA', marginTop: 5 },
   card: { width: '100%', backgroundColor: '#FFFFFF', padding: 25, borderRadius: 20, marginTop: 30, alignItems: 'center',
-    borderWidth: 2, borderColor: '#FFD700', shadowColor: '#FFD700', shadowOpacity: 0.2 },
+    borderWidth: 2, borderColor: '#FFD700' },
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#DAA520' },
   cardPrice: { fontSize: 12, color: '#87CEEB', marginTop: 5 },
   footer: { padding: 20, alignItems: 'center' },
