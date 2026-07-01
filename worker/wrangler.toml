@@ -1,0 +1,7 @@
+name = "ultimate-mods-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "MOD_KEYS"
+id = "6e8faaee0b114c17925a4f93f0179c42"
