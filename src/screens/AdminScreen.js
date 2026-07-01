@@ -38,10 +38,14 @@ export default function AdminScreen({ navigation }) {
 
   const save = async () => {
     setLoading(true);
-    const ok = await updateConfig(config, token);
+    const result = await updateConfig(config, token);
     setLoading(false);
-    Alert.alert(ok ? "✅ Saved" : "❌ Failed", ok ? "Changes are LIVE!" : "Session expired. Login again.");
-    if (!ok) setLoggedIn(false);
+    if (result.ok) {
+      Alert.alert("✅ Saved", "Changes are LIVE!");
+    } else {
+      Alert.alert("❌ Failed", "Reason: " + result.message);
+      if (result.message === "Session expired") setLoggedIn(false);
+    }
   };
 
   const logout = () => {
@@ -49,7 +53,6 @@ export default function AdminScreen({ navigation }) {
     navigation.goBack();
   };
 
-  // ---------- LOGIN ----------
   if (!loggedIn) {
     return (
       <View style={styles.loginContainer}>
@@ -77,7 +80,6 @@ export default function AdminScreen({ navigation }) {
     );
   }
 
-  // ---------- HELPERS ----------
   const updateSetting = (k, v) => setConfig({ ...config, settings: { ...config.settings, [k]: v } });
   const updateVip = (k, v) => setConfig({ ...config, vip: { ...config.vip, [k]: v } });
 
@@ -114,8 +116,7 @@ export default function AdminScreen({ navigation }) {
   const removeFeatured = (i) => setConfig({ ...config, featured: config.featured.filter((_, x) => x !== i) });
 
   const addKey = () => {
-    Alert.prompt ? Alert.prompt("App Name", "Must match app name exactly", n => n && setConfig({ ...config, keys: { ...config.keys, [n]: '' } })) 
-    : setConfig({ ...config, keys: { ...config.keys, ['NewApp' + Date.now()]: '' } });
+    setConfig({ ...config, keys: { ...config.keys, ['NewApp' + Date.now()]: '' } });
   };
   const updateKey = (n, v) => setConfig({ ...config, keys: { ...config.keys, [n]: v } });
   const removeKey = (n) => { const k = { ...config.keys }; delete k[n]; setConfig({ ...config, keys: k }); };
@@ -133,7 +134,6 @@ export default function AdminScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       
-      {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Icon name="shield-checkmark" size={22} color="#FFD700" />
@@ -145,7 +145,6 @@ export default function AdminScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
         {tabs.map(t => (
           <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.tabActive]} onPress={() => setTab(t.id)}>
@@ -157,7 +156,6 @@ export default function AdminScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 100 }}>
 
-        {/* DASHBOARD */}
         {tab === 'dashboard' && (
           <View>
             <View style={styles.statsGrid}>
@@ -170,7 +168,6 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
 
-        {/* APPS */}
         {tab === 'apps' && (
           <View>
             <View style={styles.headRow}>
@@ -199,7 +196,6 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
 
-        {/* FEATURED */}
         {tab === 'featured' && (
           <View>
             <Text style={styles.hint}>Banners at top of Home screen</Text>
@@ -217,7 +213,6 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
 
-        {/* VIP */}
         {tab === 'vip' && (
           <View>
             <Field label="Tagline" value={config.vip.tagline} onChange={v => updateVip('tagline', v)} />
@@ -238,7 +233,6 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
 
-        {/* KEYS */}
         {tab === 'keys' && (
           <View>
             <Text style={styles.hint}>License keys per app (name must match exactly)</Text>
@@ -255,7 +249,6 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
 
-        {/* SETTINGS */}
         {tab === 'settings' && (
           <View>
             <Field label="App Name (blue)" value={config.settings.appName} onChange={v => updateSetting('appName', v)} />
@@ -266,14 +259,12 @@ export default function AdminScreen({ navigation }) {
         )}
       </ScrollView>
 
-      {/* Save Button */}
       <TouchableOpacity style={styles.saveFloat} onPress={save} disabled={loading}>
         {loading ? <ActivityIndicator color="#000" /> : (
           <><Icon name="save" size={18} color="#000" /><Text style={styles.saveFloatText}>SAVE CHANGES</Text></>
         )}
       </TouchableOpacity>
 
-      {/* Add/Edit App Modal */}
       <Modal visible={modalVisible} animationType="slide">
         {editingApp && (
           <View style={styles.modalContainer}>

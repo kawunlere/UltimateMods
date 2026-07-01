@@ -40,8 +40,9 @@ export const updateConfig = async (config, token) => {
       headers: { "Content-Type": "application/json", "X-Admin-Key": token },
       body: JSON.stringify(config)
     });
-    return res.ok;
+    const data = await res.json();
+    return { ok: res.ok, message: data.error || (res.ok ? "Saved" : "Failed") };
   } catch (e) {
-    return false;
+    return { ok: false, message: e.message || "Network error" };
   }
 };
