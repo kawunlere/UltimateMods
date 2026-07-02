@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, Linking, ActivityIndicator, Share, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, Linking, ActivityIndicator, Share, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getKey } from '../services/api';
-
-const { width } = Dimensions.get('window');
+import { addPoints } from '../services/points';
+import { showToast } from '../services/toast';
+import Reviews from '../components/Reviews';
 
 export default function AppDetailScreen({ route, navigation }) {
   const { app } = route.params;
@@ -26,9 +27,11 @@ export default function AppDetailScreen({ route, navigation }) {
     if (isFav) {
       list = list.filter(x => x.name !== app.name);
       setIsFav(false);
+      showToast("Removed from wishlist", "info");
     } else {
       list.push(app);
       setIsFav(true);
+      showToast("Added to wishlist ❤️", "success");
     }
     await AsyncStorage.setItem('wishlist', JSON.stringify(list));
   };
@@ -38,20 +41,21 @@ export default function AppDetailScreen({ route, navigation }) {
     const k = await getKey(app.name);
     setKey(k);
     setLoading(false);
+    showToast("Key unlocked!", "gold");
   };
 
   const download = () => {
-    if (!app.downloadUrl) return Alert.alert("No Link", "Download link not set.");
+    if (!app.downloadUrl) return showToast("No download link set", "error");
     Linking.openURL(app.downloadUrl);
   };
 
-  const openPlayStore = () => {
-    if (app.playStoreUrl) Linking.openURL(app.playStoreUrl);
-  };
+  const openPlayStore = () => { if (app.playStoreUrl) Linking.openURL(app.playStoreUrl); };
 
   const shareApp = async () => {
     try {
       await Share.share({ message: `Check out ${app.name} on Ultimate Mods!\n${app.downloadUrl || ''}` });
+      const total = await addPoints(15);
+      showToast(`+15 points! Total: ${total}`, 'gold');
     } catch (e) {}
   };
 
@@ -95,31 +99,17 @@ export default function AppDetailScreen({ route, navigation }) {
         </View>
 
         <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{app.size || '—'}</Text>
-            <Text style={styles.statLabel}>Size</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{app.version || '—'}</Text>
-            <Text style={styles.statLabel}>Version</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{app.category || 'App'}</Text>
-            <Text style={styles.statLabel}>Category</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{app.type || 'Free'}</Text>
-            <Text style={styles.statLabel}>Type</Text>
-          </View>
+          <View style={styles.stat}><Text style={styles.statValue}>{app.size || '—'}</Text><Text style={styles.statLabel}>Size</Text></View>
+          <View style={styles.stat}><Text style={styles.statValue}>{app.version || '—'}</Text><Text style={styles.statLabel}>Version</Text></View>
+          <View style={styles.stat}><Text style={styles.statValue}>{app.category || 'App'}</Text><Text style={styles.statLabel}>Category</Text></View>
+          <View style={styles.stat}><Text style={styles.statValue}>{app.type || 'Free'}</Text><Text style={styles.statLabel}>Type</Text></View>
         </View>
 
         {screenshots.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Screenshots</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {screenshots.map((s, i) => (
-                <Image key={i} source={{ uri: s }} style={styles.screenshot} />
-              ))}
+              {screenshots.map((s, i) => <Image key={i} source={{ uri: s }} style={styles.screenshot} />)}
             </ScrollView>
           </View>
         )}
@@ -157,10 +147,7 @@ export default function AppDetailScreen({ route, navigation }) {
           {!key && (
             <TouchableOpacity style={styles.unlockBtn} onPress={unlock} disabled={loading}>
               {loading ? <ActivityIndicator color="#000" /> : (
-                <>
-                  <Icon name="lock-open" size={18} color="#000" />
-                  <Text style={styles.unlockText}>UNLOCK KEY</Text>
-                </>
+                <><Icon name="lock-open" size={18} color="#000" /><Text style={styles.unlockText}>UNLOCK KEY</Text></>
               )}
             </TouchableOpacity>
           )}
@@ -175,6 +162,8 @@ export default function AppDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
         </View>
+
+        <Reviews appName={app.name} />
 
         <View style={{ height: 30 }} />
       </ScrollView>

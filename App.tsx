@@ -2,14 +2,18 @@ import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { RootSiblingParent } from 'react-native-root-siblings';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import SplashScreen from './src/screens/SplashScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AppDetailScreen from './src/screens/AppDetailScreen';
 import VipScreen from './src/screens/VipScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import MeScreen from './src/screens/MeScreen';
+import NewsScreen from './src/screens/NewsScreen';
+import RewardsScreen from './src/screens/RewardsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,13 +64,18 @@ function MainTabs() {
 
 export default function App() {
   return (
-    <NavigationContainer theme={DarkTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
-        <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="AppDetail" component={AppDetailScreen} />
-        <Stack.Screen name="Admin" component={AdminScreen} options={{ presentation: 'modal' }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <RootSiblingParent>
+      <NavigationContainer theme={DarkTheme}>
+        <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="AppDetail" component={AppDetailScreen} />
+          <Stack.Screen name="News" component={NewsScreen} />
+          <Stack.Screen name="Rewards" component={RewardsScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} options={{ presentation: 'modal' }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </RootSiblingParent>
   );
 }

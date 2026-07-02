@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, StatusBar, Switch, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getConfig, verifyAdmin, updateConfig } from '../services/api';
+import { getConfigFresh, verifyAdmin, updateConfig } from '../services/api';
 
 export default function AdminScreen({ navigation }) {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -11,7 +11,9 @@ export default function AdminScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('dashboard');
   const [editingApp, setEditingApp] = useState(null);
+  const [editingNews, setEditingNews] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [newsModal, setNewsModal] = useState(false);
 
   const login = async () => {
     if (!password) return Alert.alert("Error", "Enter password");
@@ -20,7 +22,7 @@ export default function AdminScreen({ navigation }) {
     setLoading(false);
     if (t) {
       setToken(t);
-      const cfg = await getConfig();
+      const cfg = await getConfigFresh();
       setConfig({
         apps: cfg.apps || [],
         settings: cfg.settings || {},
@@ -107,6 +109,24 @@ export default function AdminScreen({ navigation }) {
     ]);
   };
 
+  const emptyNews = () => ({ title: '', category: 'NEWS', excerpt: '', content: '', image: '', link: '', date: new Date().toLocaleDateString() });
+  const openNewNews = () => { setEditingNews({ ...emptyNews(), _new: true }); setNewsModal(true); };
+  const openEditNews = (i) => { setEditingNews({ ...config.news[i], _index: i }); setNewsModal(true); };
+  const saveNews = () => {
+    const news = [...config.news];
+    const n = { ...editingNews }; delete n._new; delete n._index;
+    if (editingNews._new) news.unshift(n);
+    else news[editingNews._index] = n;
+    setConfig({ ...config, news });
+    setNewsModal(false); setEditingNews(null);
+  };
+  const deleteNews = (i) => {
+    Alert.alert("Delete?", "Remove this article?", [
+      { text: "Cancel" },
+      { text: "Delete", style: "destructive", onPress: () => setConfig({ ...config, news: config.news.filter((_, x) => x !== i) }) }
+    ]);
+  };
+
   const addPlan = () => setConfig({ ...config, vip: { ...config.vip, plans: [...(config.vip.plans || []), { name: '', price: '', duration: '', desc: '', popular: false }] } });
   const updatePlan = (i, k, v) => { const p = [...config.vip.plans]; p[i] = { ...p[i], [k]: v }; setConfig({ ...config, vip: { ...config.vip, plans: p } }); };
   const removePlan = (i) => setConfig({ ...config, vip: { ...config.vip, plans: config.vip.plans.filter((_, x) => x !== i) } });
@@ -115,15 +135,14 @@ export default function AdminScreen({ navigation }) {
   const updateFeatured = (i, k, v) => { const f = [...config.featured]; f[i] = { ...f[i], [k]: v }; setConfig({ ...config, featured: f }); };
   const removeFeatured = (i) => setConfig({ ...config, featured: config.featured.filter((_, x) => x !== i) });
 
-  const addKey = () => {
-    setConfig({ ...config, keys: { ...config.keys, ['NewApp' + Date.now()]: '' } });
-  };
+  const addKey = () => setConfig({ ...config, keys: { ...config.keys, ['NewApp' + Date.now()]: '' } });
   const updateKey = (n, v) => setConfig({ ...config, keys: { ...config.keys, [n]: v } });
   const removeKey = (n) => { const k = { ...config.keys }; delete k[n]; setConfig({ ...config, keys: k }); };
 
   const tabs = [
     { id: 'dashboard', icon: 'grid', label: 'Dashboard' },
     { id: 'apps', icon: 'apps', label: 'Apps' },
+    { id: 'news', icon: 'newspaper', label: 'News' },
     { id: 'featured', icon: 'star', label: 'Featured' },
     { id: 'vip', icon: 'diamond', label: 'VIP' },
     { id: 'keys', icon: 'key', label: 'Keys' },
@@ -160,9 +179,9 @@ export default function AdminScreen({ navigation }) {
           <View>
             <View style={styles.statsGrid}>
               <StatCard icon="apps" label="Total Apps" value={config.apps.length} color="#4A90E2" />
+              <StatCard icon="newspaper" label="News" value={config.news.length} color="#4CAF50" />
               <StatCard icon="star" label="Featured" value={config.featured.length} color="#FFD700" />
-              <StatCard icon="key" label="Keys" value={Object.keys(config.keys).length} color="#4CAF50" />
-              <StatCard icon="diamond" label="VIP Plans" value={(config.vip.plans || []).length} color="#E91E63" />
+              <StatCard icon="key" label="Keys" value={Object.keys(config.keys).length} color="#E91E63" />
             </View>
             <Text style={styles.hint}>Welcome back! Use tabs above to manage everything.</Text>
           </View>
@@ -185,12 +204,32 @@ export default function AdminScreen({ navigation }) {
                   <Text style={styles.appRowName} numberOfLines={2}>{a.name || 'Unnamed'}</Text>
                   <Text style={styles.appRowMeta}>{a.category || 'No category'} • {a.type || 'App'} {a.topApp ? '⭐' : ''}</Text>
                 </View>
-                <TouchableOpacity style={styles.editBtn} onPress={() => openEditApp(i)}>
-                  <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.delBtn} onPress={() => deleteApp(i)}>
-                  <Text style={styles.delText}>Delete</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.editBtn} onPress={() => openEditApp(i)}><Text style={styles.editText}>Edit</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.delBtn} onPress={() => deleteApp(i)}><Text style={styles.delText}>Delete</Text></TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {tab === 'news' && (
+          <View>
+            <View style={styles.headRow}>
+              <Text style={styles.headTitle}>News & Blog Articles</Text>
+              <TouchableOpacity style={styles.addNewBtn} onPress={openNewNews}>
+                <Icon name="add" size={18} color="#FFF" />
+                <Text style={styles.addNewText}>Add Article</Text>
+              </TouchableOpacity>
+            </View>
+            {config.news.length === 0 ? (
+              <Text style={styles.empty}>No articles yet</Text>
+            ) : config.news.map((n, i) => (
+              <View key={i} style={styles.appRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.appRowName} numberOfLines={2}>{n.title || 'Untitled'}</Text>
+                  <Text style={styles.appRowMeta}>{n.category} • {n.date}</Text>
+                </View>
+                <TouchableOpacity style={styles.editBtn} onPress={() => openEditNews(i)}><Text style={styles.editText}>Edit</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.delBtn} onPress={() => deleteNews(i)}><Text style={styles.delText}>Delete</Text></TouchableOpacity>
               </View>
             ))}
           </View>
@@ -265,14 +304,13 @@ export default function AdminScreen({ navigation }) {
         )}
       </TouchableOpacity>
 
+      {/* App Modal */}
       <Modal visible={modalVisible} animationType="slide">
         {editingApp && (
           <View style={styles.modalContainer}>
             <View style={styles.modalHead}>
               <Text style={styles.modalTitle}>{editingApp._new ? 'Add New App' : 'Edit App'}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={26} color="#FFF" />
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setModalVisible(false)}><Icon name="close" size={26} color="#FFF" /></TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 40 }}>
               <Field label="App Name *" value={editingApp.name} onChange={v => setEditingApp({ ...editingApp, name: v })} />
@@ -308,6 +346,32 @@ export default function AdminScreen({ navigation }) {
           </View>
         )}
       </Modal>
+
+      {/* News Modal */}
+      <Modal visible={newsModal} animationType="slide">
+        {editingNews && (
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHead}>
+              <Text style={styles.modalTitle}>{editingNews._new ? 'Add Article' : 'Edit Article'}</Text>
+              <TouchableOpacity onPress={() => setNewsModal(false)}><Icon name="close" size={26} color="#FFF" /></TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 40 }}>
+              <Field label="Title *" value={editingNews.title} onChange={v => setEditingNews({ ...editingNews, title: v })} />
+              <Field label="Category (e.g. NEWS, UPDATE, TUTORIAL)" value={editingNews.category} onChange={v => setEditingNews({ ...editingNews, category: v })} />
+              <Field label="Cover Image URL" value={editingNews.image} onChange={v => setEditingNews({ ...editingNews, image: v })} />
+              <Field label="Short Excerpt (1-2 lines)" value={editingNews.excerpt} onChange={v => setEditingNews({ ...editingNews, excerpt: v })} multi />
+              <Field label="Full Content *" value={editingNews.content} onChange={v => setEditingNews({ ...editingNews, content: v })} multi />
+              <Field label="External Link (optional)" value={editingNews.link} onChange={v => setEditingNews({ ...editingNews, link: v })} />
+              <Field label="Date" value={editingNews.date} onChange={v => setEditingNews({ ...editingNews, date: v })} />
+
+              <TouchableOpacity style={styles.modalSave} onPress={saveNews}>
+                <Icon name="save" size={18} color="#000" />
+                <Text style={styles.modalSaveText}>SAVE ARTICLE</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
+      </Modal>
     </View>
   );
 }
@@ -315,13 +379,7 @@ export default function AdminScreen({ navigation }) {
 const Field = ({ label, value, onChange, multi }) => (
   <View style={{ marginBottom: 12 }}>
     <Text style={styles.label}>{label}</Text>
-    <TextInput
-      style={[styles.input, multi && { height: 80, textAlignVertical: 'top' }]}
-      value={value || ''}
-      onChangeText={onChange}
-      placeholderTextColor="#555"
-      multiline={multi}
-    />
+    <TextInput style={[styles.input, multi && { height: 80, textAlignVertical: 'top' }]} value={value || ''} onChangeText={onChange} placeholderTextColor="#555" multiline={multi} />
   </View>
 );
 

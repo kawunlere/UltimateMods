@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Lin
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getConfig } from '../services/api';
+import { getPoints } from '../services/points';
 
 export default function MeScreen({ navigation }) {
   const [wishlist, setWishlist] = useState([]);
   const [settings, setSettings] = useState({});
+  const [points, setPoints] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
 
@@ -15,6 +17,7 @@ export default function MeScreen({ navigation }) {
     if (w) setWishlist(JSON.parse(w));
     const cfg = await getConfig();
     setSettings(cfg.settings || {});
+    setPoints(await getPoints());
   };
 
   useEffect(() => {
@@ -45,20 +48,25 @@ export default function MeScreen({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
         
-        {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarCircle}>
             <Icon name="person" size={40} color="#FFD700" />
           </View>
           <Text style={styles.welcomeName}>Welcome, Guest</Text>
           <Text style={styles.welcomeSub}>Ultimate Mods User</Text>
+          
+          <TouchableOpacity style={styles.pointsBox} onPress={() => navigation.navigate('Rewards')}>
+            <Icon name="wallet" size={20} color="#FFD700" />
+            <Text style={styles.pointsText}>{points} POINTS</Text>
+            <Icon name="chevron-forward" size={18} color="#FFD700" />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.upgradeBtn} onPress={() => navigation.navigate('Main', { screen: 'VIP' })}>
             <Icon name="diamond" size={16} color="#000" />
             <Text style={styles.upgradeText}>UPGRADE TO VIP</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Wishlist Section */}
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Icon name="heart" size={18} color="#E91E63" />
@@ -83,20 +91,20 @@ export default function MeScreen({ navigation }) {
           )}
         </View>
 
-        {/* Menu */}
         <View style={styles.section}>
+          <MenuItem icon="gift" label="Rewards & Points" onPress={() => navigation.navigate('Rewards')} color="#FFD700" />
+          <MenuItem icon="newspaper" label="News & Updates" onPress={() => navigation.navigate('News')} color="#4CAF50" />
           <MenuItem icon="mail" label="Contact via Email" onPress={openEmail} />
           <MenuItem icon="logo-whatsapp" label="WhatsApp / Telegram" onPress={openWhatsApp} color="#25D366" />
           <MenuItem icon="share-social" label="Share This App" onPress={shareApp} />
           <MenuItem icon="help-circle" label="FAQ" onPress={() => setFaqOpen(true)} />
           <MenuItem icon="information-circle" label="About Ultimate Mods" onPress={() => setAboutOpen(true)} />
-          <MenuItem icon="star" label="Rate Us 5 Stars" onPress={() => Alert.alert("Thanks!", "Coming soon on Play Store")} color="#FFD700" />
+          <MenuItem icon="star" label="Rate Us 5 Stars" onPress={() => Alert.alert("Thanks!", "Coming soon")} color="#FFD700" />
         </View>
 
         <Text style={styles.version}>Ultimate Mods v1.0</Text>
       </ScrollView>
 
-      {/* About Modal */}
       <Modal visible={aboutOpen} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalHead}>
@@ -117,14 +125,12 @@ export default function MeScreen({ navigation }) {
               🔑 Exclusive License Keys{'\n'}
               👑 VIP Membership Available{'\n'}
               🎮 Curated Games & Apps{'\n\n'}
-              Join thousands of members from our YouTube channel, WhatsApp community, and Telegram group. We are committed to providing the safest, latest, and most trusted mods on the market.{'\n\n'}
-              Follow us for daily drops of the hottest modded content!
+              Join thousands of members from our YouTube channel, WhatsApp community, and Telegram group. We are committed to providing the safest, latest, and most trusted mods on the market.
             </Text>
           </ScrollView>
         </View>
       </Modal>
 
-      {/* FAQ Modal */}
       <Modal visible={faqOpen} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalHead}>
@@ -136,6 +142,7 @@ export default function MeScreen({ navigation }) {
           <ScrollView contentContainerStyle={{ padding: 20 }}>
             <Faq q="How do I download a mod?" a="Tap any mod, then tap DOWNLOAD. If a key is required, tap UNLOCK KEY first." />
             <Faq q="Why do some mods need a key?" a="Premium mods use license keys for security and to prevent abuse." />
+            <Faq q="How do I earn points?" a="Daily check-in gives 10 points. Referrals give 50. Sharing gives 15." />
             <Faq q="What does VIP give me?" a="VIP members get early access, exclusive mods, no ads, and priority support." />
             <Faq q="Are the mods safe?" a="Yes! Every mod is scanned and verified safe before publishing." />
             <Faq q="How do I contact support?" a="Use the Contact via Email or WhatsApp buttons on the Me tab." />
@@ -168,6 +175,8 @@ const styles = StyleSheet.create({
   avatarCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#0A0A0A', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFD700' },
   welcomeName: { color: '#FFF', fontSize: 20, fontWeight: 'bold', marginTop: 15 },
   welcomeSub: { color: '#888', fontSize: 12, marginTop: 3 },
+  pointsBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1500', borderWidth: 1, borderColor: '#FFD700', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginTop: 15 },
+  pointsText: { color: '#FFD700', fontWeight: 'bold', marginHorizontal: 10, letterSpacing: 1 },
   upgradeBtn: { flexDirection: 'row', backgroundColor: '#FFD700', paddingHorizontal: 25, paddingVertical: 10, borderRadius: 25, marginTop: 15, alignItems: 'center' },
   upgradeText: { color: '#000', fontWeight: 'bold', marginLeft: 6, letterSpacing: 1, fontSize: 12 },
   section: { marginTop: 15, backgroundColor: '#1a1a1a', paddingVertical: 10 },

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setupNotifications, checkForUpdates } from '../services/notifications';
 
 export default function SplashScreen({ navigation }) {
   const fade = useRef(new Animated.Value(0)).current;
@@ -12,11 +14,14 @@ export default function SplashScreen({ navigation }) {
       Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true })
     ]).start();
 
-    const timer = setTimeout(() => {
-      navigation.replace('Main');
-    }, 2500);
-
-    return () => clearTimeout(timer);
+    (async () => {
+      await setupNotifications();
+      checkForUpdates();
+      const done = await AsyncStorage.getItem('ONBOARDING_DONE');
+      setTimeout(() => {
+        navigation.replace(done ? 'Main' : 'Onboarding');
+      }, 2500);
+    })();
   }, []);
 
   return (
@@ -29,7 +34,7 @@ export default function SplashScreen({ navigation }) {
         <Text style={styles.title}>ULTIMATE <Text style={styles.gold}>MODS</Text></Text>
         <Text style={styles.tagline}>Premium Games & Secure Tools</Text>
       </Animated.View>
-      <Animated.Text style={[styles.footer, { opacity: fade }]}>v1.0 • Powered by You</Animated.Text>
+      <Animated.Text style={[styles.footer, { opacity: fade }]}>v1.0 • Powered by Ultimate Mods</Animated.Text>
     </View>
   );
 }
